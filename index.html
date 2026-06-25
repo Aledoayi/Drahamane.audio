@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#08090a" />
+    <title>Lecteur audio immersif</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell" id="appShell">
+      <div class="ambient" aria-hidden="true"></div>
+
+      <header class="top-bar">
+        <div>
+          <span class="eyebrow">Bibliothèque audio</span>
+          <h1>Écoute immersive</h1>
+        </div>
+        <div class="status-pill" id="modeStatus">En pause</div>
+      </header>
+
+      <section class="player-stage" aria-label="Lecteur audio">
+        <div class="track-number" id="trackNumber">00 / 00</div>
+        <h2 id="trackTitle">Chargement des pistes…</h2>
+        <p class="track-filename" id="trackFilename"></p>
+
+        <canvas
+          class="visualizer"
+          id="visualizer"
+          aria-label="Visualisation audio"
+        ></canvas>
+
+        <div class="timeline">
+          <span id="currentTime">00:00</span>
+          <input
+            id="seekBar"
+            type="range"
+            min="0"
+            max="1000"
+            value="0"
+            aria-label="Position dans la piste"
+          />
+          <span id="trackDuration">00:00</span>
+        </div>
+
+        <div class="transport" aria-label="Commandes de lecture">
+          <button class="icon-button" id="previousButton" type="button" aria-label="Piste précédente">
+            <span aria-hidden="true">|‹</span>
+          </button>
+          <button class="seek-button" id="rewindButton" type="button" aria-label="Reculer de 10 secondes">
+            <span aria-hidden="true">↶</span>
+            <small id="rewindValue">10</small>
+          </button>
+          <button class="play-button" id="playButton" type="button" aria-label="Lire">
+            <span id="playIcon" aria-hidden="true">▶</span>
+          </button>
+          <button class="seek-button" id="forwardButton" type="button" aria-label="Avancer de 10 secondes">
+            <span aria-hidden="true">↷</span>
+            <small id="forwardValue">10</small>
+          </button>
+          <button class="icon-button" id="nextButton" type="button" aria-label="Piste suivante">
+            <span aria-hidden="true">›|</span>
+          </button>
+        </div>
+      </section>
+
+      <button
+        class="playlist-toggle"
+        id="playlistToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="playlistPanel"
+      >
+        <span aria-hidden="true">☰</span>
+        <span>Liste des pistes</span>
+      </button>
+
+      <aside class="playlist-panel" id="playlistPanel" aria-hidden="true">
+        <div class="playlist-heading">
+          <strong>Pistes disponibles</strong>
+          <button id="closePlaylist" type="button" aria-label="Fermer la liste">×</button>
+        </div>
+        <div class="playlist" id="playlist" role="listbox" aria-label="Pistes audio"></div>
+      </aside>
+
+      <div class="bottom-zone" id="bottomZone">
+        <footer class="control-dock" aria-label="Options de lecture">
+          <button class="control-button" id="shuffleButton" type="button">
+            <span aria-hidden="true">⇄</span>
+            <span>Shuffle</span>
+          </button>
+
+          <button
+            class="control-button"
+            id="loopButton"
+            type="button"
+            aria-pressed="true"
+          >
+            <span aria-hidden="true">↻</span>
+            <span>Boucle</span>
+          </button>
+
+          <button
+            class="control-button"
+            id="playOnceButton"
+            type="button"
+            aria-pressed="false"
+          >
+            <span aria-hidden="true">1×</span>
+            <span>Une fois</span>
+          </button>
+
+          <div class="speed-control" aria-label="Vitesse de lecture">
+            <button id="slowerButton" type="button" aria-label="Réduire la vitesse">−</button>
+            <span>Vitesse</span>
+            <strong id="speedValue">1,00×</strong>
+            <button id="fasterButton" type="button" aria-label="Augmenter la vitesse">+</button>
+          </div>
+
+          <label class="select-control" for="skipSelect">
+            <span>Saut</span>
+            <select id="skipSelect" aria-label="Durée du saut avant et arrière">
+              <option value="5">5 s</option>
+              <option value="10" selected>10 s</option>
+              <option value="15">15 s</option>
+              <option value="30">30 s</option>
+              <option value="60">60 s</option>
+            </select>
+          </label>
+
+          <label class="select-control" for="maxDurationSelect">
+            <span>Durée max.</span>
+            <select id="maxDurationSelect">
+              <option value="5">5 min</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="60" selected>1 h</option>
+              <option value="120">2 h</option>
+              <option value="360">6 h</option>
+              <option value="720">12 h</option>
+              <option value="1440">24 h</option>
+            </select>
+          </label>
+
+          <div class="countdown" role="status" aria-live="polite">
+            <span>Restant</span>
+            <strong id="countdownValue">01:00:00</strong>
+          </div>
+        </footer>
+      </div>
+
+      <audio id="audioPlayer" preload="metadata" playsinline></audio>
+      <div class="empty-state" id="emptyState" hidden>
+        Ajoutez des fichiers audio dans le dossier <strong>audio/</strong>.
+      </div>
+    </main>
+
+    <script src="audio/manifest.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
