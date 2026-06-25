@@ -7,7 +7,12 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#08090a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Drahamane Audio" />
     <title>Lecteur audio immersif</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/audio-cover-512.png" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -152,7 +157,13 @@
         </footer>
       </div>
 
-      <audio id="audioPlayer" preload="metadata" playsinline></audio>
+      <audio
+        id="audioPlayer"
+        preload="auto"
+        playsinline
+        webkit-playsinline
+        x-webkit-airplay="allow"
+      ></audio>
       <div class="empty-state" id="emptyState" hidden>
         Ajoutez des fichiers audio dans le dossier <strong>audio/</strong>.
       </div>

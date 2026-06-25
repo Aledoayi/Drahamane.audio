@@ -11,6 +11,7 @@ const state = {
   isShuffle: false,
   isLooping: true,
   isPlayOnce: false,
+  playIntent: false,
   playOnceRemaining: 0,
   playbackRate: 1,
   skipSeconds: 10,
@@ -25,6 +26,7 @@ const state = {
   analyser: null,
   sourceNode: null,
   visualizerFrame: 0,
+  loadToken: 0,
 };
 
 const appShell = document.querySelector("#appShell");
@@ -220,9 +222,11 @@ function updatePlaylistSelection() {
 
 function loadTrack(index, autoplay = false) {
   if (state.tracks.length === 0) return;
+  const loadToken = ++state.loadToken;
   state.currentIndex = (index + state.tracks.length) % state.tracks.length;
   const src = state.tracks[state.currentIndex];
   audioPlayer.src = src;
+  audioPlayer.load();
   trackNumber.textContent =
     `${String(state.currentIndex + 1).padStart(2, "0")} / ${String(state.tracks.length).padStart(2, "0")}`;
   trackTitle.textContent = titleFromPath(src);
@@ -236,11 +240,25 @@ function loadTrack(index, autoplay = false) {
   audioPlayer.webkitPreservesPitch = true;
   updatePlaylistSelection();
   updateMediaSessionMetadata();
-  if (autoplay) void playAudio();
+  if (autoplay) {
+    state.playIntent = true;
+    const resumePlayback = () => {
+      if (
+        loadToken === state.loadToken &&
+        state.playIntent &&
+        audioPlayer.paused
+      ) {
+        void playAudio();
+      }
+    };
+    audioPlayer.addEventListener("canplay", resumePlayback, { once: true });
+    void playAudio();
+  }
 }
 
 async function playAudio() {
   if (state.tracks.length === 0) return;
+  state.playIntent = true;
   try {
     await setupVisualizer();
   } catch {
@@ -256,6 +274,7 @@ async function playAudio() {
 }
 
 function pauseAudio() {
+  state.playIntent = false;
   audioPlayer.pause();
 }
 
@@ -264,11 +283,12 @@ function togglePlayback() {
 }
 
 function previousTrack() {
+  const shouldResume = state.playIntent || state.isPlaying;
   if (audioPlayer.currentTime > 4) {
     audioPlayer.currentTime = 0;
     return;
   }
-  loadTrack(state.currentIndex - 1, state.isPlaying);
+  loadTrack(state.currentIndex - 1, shouldResume);
 }
 
 function seekBy(seconds) {
@@ -311,8 +331,11 @@ function changePlaybackRate(delta) {
   }
 }
 
-function nextTrack(manual = true) {
+function nextTrack(manual = true, forceAutoplay = false) {
   if (state.tracks.length === 0) return;
+  const shouldAutoplay =
+    forceAutoplay || state.playIntent || state.isPlaying;
+
   if (!manual && state.isPlayOnce) {
     state.playOnceRemaining -= 1;
     if (state.playOnceRemaining <= 0) {
@@ -321,19 +344,31 @@ function nextTrack(manual = true) {
     }
   }
 
+  if (
+    !manual &&
+    !state.isPlayOnce &&
+    !state.isLooping &&
+    !state.isShuffle &&
+    state.currentIndex >= state.tracks.length - 1
+  ) {
+    stopPlayback();
+    return;
+  }
+
   let nextIndex = state.currentIndex + 1;
   if (state.isShuffle && state.tracks.length > 1) {
     do {
       nextIndex = Math.floor(Math.random() * state.tracks.length);
     } while (nextIndex === state.currentIndex);
   }
-  loadTrack(nextIndex, state.isPlaying);
+  loadTrack(nextIndex, shouldAutoplay);
 }
 
 function stopPlayback() {
   audioPlayer.pause();
   audioPlayer.currentTime = 0;
   state.isPlaying = false;
+  state.playIntent = false;
   state.startedAt = 0;
   state.playOnceRemaining = 0;
   window.clearTimeout(state.autoStopId);
@@ -476,10 +511,29 @@ function updateMediaSessionMetadata() {
     return;
   }
   const src = state.tracks[state.currentIndex];
+  const trackPosition = `Piste ${state.currentIndex + 1} sur ${state.tracks.length}`;
+  const artworkBaseUrl = new URL("assets/", document.baseURI);
   navigator.mediaSession.metadata = new MediaMetadata({
     title: titleFromPath(src),
     artist: "Drahamane Audio",
-    album: "Écoute immersive",
+    album: `Écoute immersive • ${trackPosition}`,
+    artwork: [
+      {
+        src: new URL("audio-cover-192.png", artworkBaseUrl).href,
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: new URL("audio-cover-512.png", artworkBaseUrl).href,
+        sizes: "512x512",
+        type: "image/png",
+      },
+      {
+        src: new URL("audio-cover-1024.png", artworkBaseUrl).href,
+        sizes: "1024x1024",
+        type: "image/png",
+      },
+    ],
   });
   document.title = `${titleFromPath(src)} — Écoute immersive`;
   updateMediaSessionPosition();
@@ -511,7 +565,7 @@ function setupMediaSessionActions() {
     play: () => void playAudio(),
     pause: pauseAudio,
     previoustrack: previousTrack,
-    nexttrack: () => nextTrack(true),
+    nexttrack: () => nextTrack(true, state.playIntent || state.isPlaying),
     seekbackward: (details) =>
       seekBy(-(details.seekOffset || state.skipSeconds)),
     seekforward: (details) =>
@@ -595,7 +649,7 @@ function scheduleControlsHide() {
 async function setupVisualizer() {
   // Web Audio can mute local media routed through MediaElementSource on file://.
   // Keep native audio output in direct-file mode so playback remains audible.
-  if (window.location.protocol === "file:") {
+  if (window.location.protocol === "file:" || isIOSDevice()) {
     drawIdleVisualizer();
     return;
   }
@@ -614,6 +668,13 @@ async function setupVisualizer() {
   state.sourceNode.connect(state.analyser);
   state.analyser.connect(state.audioContext.destination);
   drawVisualizer();
+}
+
+function isIOSDevice() {
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 function resizeCanvas() {
@@ -675,6 +736,7 @@ function drawIdleVisualizer() {
 
 audioPlayer.addEventListener("play", () => {
   state.isPlaying = true;
+  state.playIntent = true;
   if (!state.startedAt) startSessionTimer();
   // Let the device lock naturally; Media Session keeps supported browsers playing.
   void releaseWakeLock();
@@ -689,8 +751,14 @@ audioPlayer.addEventListener("pause", () => {
 });
 
 audioPlayer.addEventListener("ended", () => {
-  if (state.isPlayOnce || state.isLooping || state.isShuffle) {
-    nextTrack(false);
+  if (
+    state.isPlayOnce ||
+    state.isLooping ||
+    state.isShuffle ||
+    state.currentIndex < state.tracks.length - 1
+  ) {
+    state.playIntent = true;
+    nextTrack(false, true);
   } else {
     stopPlayback();
   }
