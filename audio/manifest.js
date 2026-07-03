@@ -7,6 +7,7 @@ window.AUDIO_TRACKS = [
   "LES AVENTURES DE COUMBA ET ZOULOU EN AFRIQUE DU SUD.mp3",
   "Mes plus beaux contes d'océanie.mp3",
   "PANIQUE EN SKI NAUTIQUE.mp3",
+  "Peppa Pig En vacances avec Mamy et Papy Pig.mp3",
   "Petits antômes au pays des formes et des couleurs.mp3",
   "Salomé veut une histoire….mp3",
   "Sauvetage du Capybara.mp3",
