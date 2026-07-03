@@ -11,5 +11,6 @@ window.AUDIO_TRACKS = [
   "Salomé veut une histoire….mp3",
   "Sauvetage du Capybara.mp3",
   "Un jour je serai.mp3",
-  "Une grande demande pour Madame Poule.mp3"
+  "Une grande demande pour Madame Poule.mp3",
+  "Ziggy Zazou, Guitare star.mp3"
 ];
