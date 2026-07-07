@@ -11,6 +11,7 @@ const state = {
   isShuffle: false,
   isLooping: true,
   isPlayOnce: false,
+  isManualNext: false,
   playIntent: false,
   playOnceRemaining: 0,
   playbackRate: 1,
@@ -49,6 +50,7 @@ const forwardValue = document.querySelector("#forwardValue");
 const shuffleButton = document.querySelector("#shuffleButton");
 const loopButton = document.querySelector("#loopButton");
 const playOnceButton = document.querySelector("#playOnceButton");
+const manualNextButton = document.querySelector("#manualNextButton");
 const slowerButton = document.querySelector("#slowerButton");
 const fasterButton = document.querySelector("#fasterButton");
 const speedValue = document.querySelector("#speedValue");
@@ -364,6 +366,40 @@ function nextTrack(manual = true, forceAutoplay = false) {
   loadTrack(nextIndex, shouldAutoplay);
 }
 
+function selectNextTrackPausedAfterEnd() {
+  state.playIntent = false;
+  state.isPlaying = false;
+  void releaseWakeLock();
+
+  if (state.isPlayOnce) {
+    state.playOnceRemaining -= 1;
+    if (state.playOnceRemaining <= 0) {
+      stopPlayback();
+      return;
+    }
+  }
+
+  if (
+    !state.isPlayOnce &&
+    !state.isLooping &&
+    !state.isShuffle &&
+    state.currentIndex >= state.tracks.length - 1
+  ) {
+    stopPlayback();
+    return;
+  }
+
+  let nextIndex = state.currentIndex + 1;
+  if (state.isShuffle && state.tracks.length > 1) {
+    do {
+      nextIndex = Math.floor(Math.random() * state.tracks.length);
+    } while (nextIndex === state.currentIndex);
+  }
+
+  loadTrack(nextIndex, false);
+  updatePlaybackUi();
+}
+
 function stopPlayback() {
   audioPlayer.pause();
   audioPlayer.currentTime = 0;
@@ -421,6 +457,12 @@ function togglePlayOnce() {
 
   if (state.isPlaying) restartSessionTimer();
   else updateCountdown();
+}
+
+function toggleManualNext() {
+  state.isManualNext = !state.isManualNext;
+  manualNextButton.classList.toggle("is-active", state.isManualNext);
+  manualNextButton.setAttribute("aria-pressed", String(state.isManualNext));
 }
 
 function getPlayOnceDurationMs() {
@@ -751,6 +793,11 @@ audioPlayer.addEventListener("pause", () => {
 });
 
 audioPlayer.addEventListener("ended", () => {
+  if (state.isManualNext) {
+    selectNextTrackPausedAfterEnd();
+    return;
+  }
+
   if (
     state.isPlayOnce ||
     state.isLooping ||
@@ -797,6 +844,7 @@ forwardButton.addEventListener("click", () => seekBy(state.skipSeconds));
 shuffleButton.addEventListener("click", toggleShuffle);
 loopButton.addEventListener("click", toggleLoop);
 playOnceButton.addEventListener("click", togglePlayOnce);
+manualNextButton.addEventListener("click", toggleManualNext);
 slowerButton.addEventListener("click", () => changePlaybackRate(-0.05));
 fasterButton.addEventListener("click", () => changePlaybackRate(0.05));
 playlistToggle.addEventListener("click", togglePlaylistPanel);
