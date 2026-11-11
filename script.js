@@ -10,6 +10,7 @@ const state = {
   isPlaying: false,
   isShuffle: false,
   isLooping: true,
+  isRepeatingTrack: false,
   isPlayOnce: false,
   isManualNext: false,
   playIntent: false,
@@ -49,6 +50,7 @@ const rewindValue = document.querySelector("#rewindValue");
 const forwardValue = document.querySelector("#forwardValue");
 const shuffleButton = document.querySelector("#shuffleButton");
 const loopButton = document.querySelector("#loopButton");
+const repeatTrackButton = document.querySelector("#repeatTrackButton");
 const playOnceButton = document.querySelector("#playOnceButton");
 const manualNextButton = document.querySelector("#manualNextButton");
 const slowerButton = document.querySelector("#slowerButton");
@@ -428,6 +430,12 @@ function toggleLoop() {
   state.isLooping = !state.isLooping;
   loopButton.classList.toggle("is-active", state.isLooping);
   loopButton.setAttribute("aria-pressed", String(state.isLooping));
+  if (state.isLooping && state.isRepeatingTrack) {
+    state.isRepeatingTrack = false;
+    audioPlayer.loop = false;
+    repeatTrackButton.classList.remove("is-active");
+    repeatTrackButton.setAttribute("aria-pressed", "false");
+  }
   if (state.isLooping && state.isPlayOnce) {
     state.isPlayOnce = false;
     playOnceButton.classList.remove("is-active");
@@ -435,6 +443,34 @@ function toggleLoop() {
     maxDurationSelect.disabled = false;
     state.activeDurationMs = state.configuredMaxDurationMs;
     updateCountdown();
+  }
+}
+
+function toggleRepeatTrack() {
+  state.isRepeatingTrack = !state.isRepeatingTrack;
+  audioPlayer.loop = state.isRepeatingTrack;
+  repeatTrackButton.classList.toggle("is-active", state.isRepeatingTrack);
+  repeatTrackButton.setAttribute("aria-pressed", String(state.isRepeatingTrack));
+
+  if (state.isRepeatingTrack) {
+    state.isManualNext = false;
+    manualNextButton.classList.remove("is-active");
+    manualNextButton.setAttribute("aria-pressed", "false");
+
+    state.isLooping = false;
+    loopButton.classList.remove("is-active");
+    loopButton.setAttribute("aria-pressed", "false");
+
+    if (state.isPlayOnce) {
+      state.isPlayOnce = false;
+      playOnceButton.classList.remove("is-active");
+      playOnceButton.setAttribute("aria-pressed", "false");
+      maxDurationSelect.disabled = false;
+      state.playOnceRemaining = 0;
+      state.activeDurationMs = state.configuredMaxDurationMs;
+      if (state.isPlaying) restartSessionTimer();
+      else updateCountdown();
+    }
   }
 }
 
@@ -448,6 +484,10 @@ function togglePlayOnce() {
     state.isLooping = false;
     loopButton.classList.remove("is-active");
     loopButton.setAttribute("aria-pressed", "false");
+    state.isRepeatingTrack = false;
+    audioPlayer.loop = false;
+    repeatTrackButton.classList.remove("is-active");
+    repeatTrackButton.setAttribute("aria-pressed", "false");
     state.playOnceRemaining = state.tracks.length;
     state.activeDurationMs = getPlayOnceDurationMs();
   } else {
@@ -463,6 +503,12 @@ function toggleManualNext() {
   state.isManualNext = !state.isManualNext;
   manualNextButton.classList.toggle("is-active", state.isManualNext);
   manualNextButton.setAttribute("aria-pressed", String(state.isManualNext));
+  if (state.isManualNext && state.isRepeatingTrack) {
+    state.isRepeatingTrack = false;
+    audioPlayer.loop = false;
+    repeatTrackButton.classList.remove("is-active");
+    repeatTrackButton.setAttribute("aria-pressed", "false");
+  }
 }
 
 function getPlayOnceDurationMs() {
@@ -843,6 +889,7 @@ rewindButton.addEventListener("click", () => seekBy(-state.skipSeconds));
 forwardButton.addEventListener("click", () => seekBy(state.skipSeconds));
 shuffleButton.addEventListener("click", toggleShuffle);
 loopButton.addEventListener("click", toggleLoop);
+repeatTrackButton.addEventListener("click", toggleRepeatTrack);
 playOnceButton.addEventListener("click", togglePlayOnce);
 manualNextButton.addEventListener("click", toggleManualNext);
 slowerButton.addEventListener("click", () => changePlaybackRate(-0.05));
@@ -904,3 +951,4 @@ loopButton.classList.add("is-active");
 updateSkipControls();
 setupMediaSessionActions();
 boot();
+

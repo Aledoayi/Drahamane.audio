@@ -354,7 +354,7 @@ h2 {
   left: 50%;
   bottom: max(16px, env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(8, auto);
+  grid-template-columns: repeat(9, auto);
   align-items: center;
   gap: 8px;
   max-width: calc(100vw - 28px);
@@ -391,6 +391,17 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 0 14px;
+}
+
+.repeat-track-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .speed-control {
@@ -672,3 +683,4 @@ h2 {
     transition-duration: 1ms !important;
   }
 }
+

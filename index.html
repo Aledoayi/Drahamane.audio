@@ -102,10 +102,26 @@
             class="control-button"
             id="loopButton"
             type="button"
+            aria-label="Répéter toute la bibliothèque"
             aria-pressed="true"
           >
             <span aria-hidden="true">↻</span>
             <span>Boucle</span>
+          </button>
+
+          <button
+            class="control-button"
+            id="repeatTrackButton"
+            type="button"
+            aria-label="Répéter la piste en cours"
+            aria-pressed="false"
+            title="Répéter la piste en cours"
+          >
+            <svg class="repeat-track-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" />
+              <path d="M12 9h2v6m-2 0h4" />
+            </svg>
+            <span>Répéter la piste</span>
           </button>
 
           <button
@@ -183,3 +199,4 @@
     <script src="script.js"></script>
   </body>
 </html>
+
