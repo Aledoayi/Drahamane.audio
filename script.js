@@ -56,6 +56,8 @@ const repeatTrackButton = document.querySelector("#repeatTrackButton");
 const repeatTrackBadge = document.querySelector("#repeatTrackBadge");
 const repeatTrackMenu = document.querySelector("#repeatTrackMenu");
 const repeatTrackControl = repeatTrackButton.closest(".repeat-track-control");
+const repeatTrackCountInput = document.querySelector("#repeatTrackCountInput");
+const applyRepeatTrackCount = document.querySelector("#applyRepeatTrackCount");
 const playOnceButton = document.querySelector("#playOnceButton");
 const manualNextButton = document.querySelector("#manualNextButton");
 const slowerButton = document.querySelector("#slowerButton");
@@ -454,7 +456,9 @@ function updateRepeatTrackUi() {
     ? "Choisir le nombre de répétitions de la piste"
     : state.trackRepeatCount === Infinity
       ? "Répéter la piste indéfiniment"
-      : `Répéter la piste ${state.trackRepeatCount} fois de plus`;
+      : state.trackRepeatCount === 1
+        ? "Répéter la piste une fois de plus"
+        : `Répéter la piste ${state.trackRepeatCount} fois de plus`;
 
   repeatTrackButton.classList.toggle("is-active", active);
   repeatTrackButton.setAttribute("aria-pressed", String(active));
@@ -463,7 +467,9 @@ function updateRepeatTrackUi() {
   repeatTrackBadge.hidden = !active;
   repeatTrackBadge.textContent = state.trackRepeatCount === Infinity
     ? "∞"
-    : String(state.trackRepeatCount);
+    : state.trackRepeatCount > 99
+      ? "99+"
+      : String(state.trackRepeatCount);
 
   repeatTrackMenu.querySelectorAll("[data-repeat-mode]").forEach((option) => {
     const selected = state.trackRepeatCount === Infinity
@@ -485,14 +491,29 @@ function toggleRepeatTrackMenu() {
   repeatTrackMenu.hidden = !opening;
   repeatTrackButton.setAttribute("aria-expanded", String(opening));
   if (opening) {
+    repeatTrackCountInput.value = Number.isSafeInteger(state.trackRepeatCount) && state.trackRepeatCount > 0
+      ? String(state.trackRepeatCount)
+      : "1";
+    repeatTrackCountInput.setCustomValidity("");
     const selectedOption = [...repeatTrackMenu.querySelectorAll("[data-repeat-mode]")]
       .find((option) => option.getAttribute("aria-pressed") === "true");
-    (selectedOption || repeatTrackMenu.querySelector("[data-repeat-mode='infinite']"))?.focus();
+    if (selectedOption) selectedOption.focus();
+    else repeatTrackCountInput.focus();
   }
 }
 
 function setTrackRepeatMode(value) {
   const repeatCount = value === "infinite" ? Infinity : Number(value);
+  if (
+    repeatCount !== 0 &&
+    repeatCount !== Infinity &&
+    (!Number.isSafeInteger(repeatCount) || repeatCount < 1)
+  ) {
+    repeatTrackCountInput.setCustomValidity("Saisis un nombre entier supérieur ou égal à 1.");
+    repeatTrackCountInput.reportValidity();
+    return;
+  }
+  repeatTrackCountInput.setCustomValidity("");
   state.trackRepeatCount = repeatCount;
   state.isRepeatingTrack = repeatCount !== 0;
   state.trackRepeatRemaining = Number.isFinite(repeatCount) ? repeatCount : Infinity;
@@ -957,6 +978,8 @@ repeatTrackButton.addEventListener("click", toggleRepeatTrackMenu);
 repeatTrackMenu.querySelectorAll("[data-repeat-mode]").forEach((option) => {
   option.addEventListener("click", () => setTrackRepeatMode(option.dataset.repeatMode));
 });
+repeatTrackCountInput.addEventListener("input", () => repeatTrackCountInput.setCustomValidity(""));
+applyRepeatTrackCount.addEventListener("click", () => setTrackRepeatMode(repeatTrackCountInput.value));
 playOnceButton.addEventListener("click", togglePlayOnce);
 manualNextButton.addEventListener("click", toggleManualNext);
 slowerButton.addEventListener("click", () => changePlaybackRate(-0.05));

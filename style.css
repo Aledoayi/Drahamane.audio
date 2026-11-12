@@ -473,6 +473,49 @@ h2 {
   background: rgba(99, 197, 218, 0.2);
 }
 
+.repeat-track-custom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 9px 4px 3px;
+  border-top: 1px solid var(--line);
+}
+
+.repeat-track-custom label {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.repeat-track-custom input {
+  width: 100%;
+  height: 36px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  font-variant-numeric: tabular-nums;
+}
+
+.repeat-track-custom button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.repeat-track-custom button:hover,
+.repeat-track-custom button:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .speed-control {
   display: grid;
   grid-template-columns: 30px auto auto 30px;

@@ -137,11 +137,19 @@
             >
               <button class="repeat-track-option" type="button" data-repeat-mode="0" aria-pressed="false">Désactivé</button>
               <button class="repeat-track-option" type="button" data-repeat-mode="infinite" aria-pressed="false">Indéfini</button>
-              <button class="repeat-track-option" type="button" data-repeat-mode="1" aria-pressed="false">1 répétition</button>
-              <button class="repeat-track-option" type="button" data-repeat-mode="2" aria-pressed="false">2 répétitions</button>
-              <button class="repeat-track-option" type="button" data-repeat-mode="3" aria-pressed="false">3 répétitions</button>
-              <button class="repeat-track-option" type="button" data-repeat-mode="4" aria-pressed="false">4 répétitions</button>
-              <button class="repeat-track-option" type="button" data-repeat-mode="5" aria-pressed="false">5 répétitions</button>
+              <div class="repeat-track-custom">
+                <label for="repeatTrackCountInput">Répétitions en plus</label>
+                <input
+                  id="repeatTrackCountInput"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value="1"
+                  inputmode="numeric"
+                  aria-label="Nombre de répétitions supplémentaires"
+                />
+                <button id="applyRepeatTrackCount" type="button">Appliquer</button>
+              </div>
             </div>
           </div>
 
