@@ -387,10 +387,15 @@ h2 {
 }
 
 .control-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 0 14px;
+}
+
+.repeat-track-control {
+  position: relative;
 }
 
 .repeat-track-icon {
@@ -402,6 +407,70 @@ h2 {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
+}
+
+.repeat-track-badge {
+  position: absolute;
+  top: -4px;
+  left: 27px;
+  display: grid;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  place-items: center;
+  border: 1px solid var(--panel-strong);
+  border-radius: 999px;
+  color: #111;
+  background: var(--accent-cool);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.repeat-track-badge[hidden] {
+  display: none;
+}
+
+.repeat-track-menu {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 10px);
+  left: 0;
+  display: grid;
+  min-width: 190px;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(20px);
+}
+
+.repeat-track-menu[hidden] {
+  display: none;
+}
+
+.repeat-track-option {
+  min-height: 36px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0 10px;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.repeat-track-option:hover,
+.repeat-track-option:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.repeat-track-option.is-selected {
+  color: var(--text);
+  background: rgba(99, 197, 218, 0.2);
 }
 
 .speed-control {

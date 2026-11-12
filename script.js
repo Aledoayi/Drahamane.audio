@@ -11,6 +11,8 @@ const state = {
   isShuffle: false,
   isLooping: true,
   isRepeatingTrack: false,
+  trackRepeatCount: 0,
+  trackRepeatRemaining: 0,
   isPlayOnce: false,
   isManualNext: false,
   playIntent: false,
@@ -51,6 +53,9 @@ const forwardValue = document.querySelector("#forwardValue");
 const shuffleButton = document.querySelector("#shuffleButton");
 const loopButton = document.querySelector("#loopButton");
 const repeatTrackButton = document.querySelector("#repeatTrackButton");
+const repeatTrackBadge = document.querySelector("#repeatTrackBadge");
+const repeatTrackMenu = document.querySelector("#repeatTrackMenu");
+const repeatTrackControl = repeatTrackButton.closest(".repeat-track-control");
 const playOnceButton = document.querySelector("#playOnceButton");
 const manualNextButton = document.querySelector("#manualNextButton");
 const slowerButton = document.querySelector("#slowerButton");
@@ -228,6 +233,9 @@ function loadTrack(index, autoplay = false) {
   if (state.tracks.length === 0) return;
   const loadToken = ++state.loadToken;
   state.currentIndex = (index + state.tracks.length) % state.tracks.length;
+  if (state.isRepeatingTrack && Number.isFinite(state.trackRepeatCount)) {
+    state.trackRepeatRemaining = state.trackRepeatCount;
+  }
   const src = state.tracks[state.currentIndex];
   audioPlayer.src = src;
   audioPlayer.load();
@@ -430,12 +438,6 @@ function toggleLoop() {
   state.isLooping = !state.isLooping;
   loopButton.classList.toggle("is-active", state.isLooping);
   loopButton.setAttribute("aria-pressed", String(state.isLooping));
-  if (state.isLooping && state.isRepeatingTrack) {
-    state.isRepeatingTrack = false;
-    audioPlayer.loop = false;
-    repeatTrackButton.classList.remove("is-active");
-    repeatTrackButton.setAttribute("aria-pressed", "false");
-  }
   if (state.isLooping && state.isPlayOnce) {
     state.isPlayOnce = false;
     playOnceButton.classList.remove("is-active");
@@ -446,20 +448,59 @@ function toggleLoop() {
   }
 }
 
-function toggleRepeatTrack() {
-  state.isRepeatingTrack = !state.isRepeatingTrack;
-  audioPlayer.loop = state.isRepeatingTrack;
-  repeatTrackButton.classList.toggle("is-active", state.isRepeatingTrack);
-  repeatTrackButton.setAttribute("aria-pressed", String(state.isRepeatingTrack));
+function updateRepeatTrackUi() {
+  const active = state.isRepeatingTrack;
+  const label = !active
+    ? "Choisir le nombre de répétitions de la piste"
+    : state.trackRepeatCount === Infinity
+      ? "Répéter la piste indéfiniment"
+      : `Répéter la piste ${state.trackRepeatCount} fois de plus`;
+
+  repeatTrackButton.classList.toggle("is-active", active);
+  repeatTrackButton.setAttribute("aria-pressed", String(active));
+  repeatTrackButton.setAttribute("aria-label", label);
+  repeatTrackButton.title = label;
+  repeatTrackBadge.hidden = !active;
+  repeatTrackBadge.textContent = state.trackRepeatCount === Infinity
+    ? "∞"
+    : String(state.trackRepeatCount);
+
+  repeatTrackMenu.querySelectorAll("[data-repeat-mode]").forEach((option) => {
+    const selected = state.trackRepeatCount === Infinity
+      ? option.dataset.repeatMode === "infinite"
+      : option.dataset.repeatMode === String(state.trackRepeatCount);
+    option.classList.toggle("is-selected", selected);
+    option.setAttribute("aria-pressed", String(selected));
+  });
+}
+
+function closeRepeatTrackMenu(returnFocus = false) {
+  repeatTrackMenu.hidden = true;
+  repeatTrackButton.setAttribute("aria-expanded", "false");
+  if (returnFocus) repeatTrackButton.focus();
+}
+
+function toggleRepeatTrackMenu() {
+  const opening = repeatTrackMenu.hidden;
+  repeatTrackMenu.hidden = !opening;
+  repeatTrackButton.setAttribute("aria-expanded", String(opening));
+  if (opening) {
+    const selectedOption = [...repeatTrackMenu.querySelectorAll("[data-repeat-mode]")]
+      .find((option) => option.getAttribute("aria-pressed") === "true");
+    (selectedOption || repeatTrackMenu.querySelector("[data-repeat-mode='infinite']"))?.focus();
+  }
+}
+
+function setTrackRepeatMode(value) {
+  const repeatCount = value === "infinite" ? Infinity : Number(value);
+  state.trackRepeatCount = repeatCount;
+  state.isRepeatingTrack = repeatCount !== 0;
+  state.trackRepeatRemaining = Number.isFinite(repeatCount) ? repeatCount : Infinity;
 
   if (state.isRepeatingTrack) {
     state.isManualNext = false;
     manualNextButton.classList.remove("is-active");
     manualNextButton.setAttribute("aria-pressed", "false");
-
-    state.isLooping = false;
-    loopButton.classList.remove("is-active");
-    loopButton.setAttribute("aria-pressed", "false");
 
     if (state.isPlayOnce) {
       state.isPlayOnce = false;
@@ -472,6 +513,9 @@ function toggleRepeatTrack() {
       else updateCountdown();
     }
   }
+
+  updateRepeatTrackUi();
+  closeRepeatTrackMenu(true);
 }
 
 function togglePlayOnce() {
@@ -485,9 +529,9 @@ function togglePlayOnce() {
     loopButton.classList.remove("is-active");
     loopButton.setAttribute("aria-pressed", "false");
     state.isRepeatingTrack = false;
-    audioPlayer.loop = false;
-    repeatTrackButton.classList.remove("is-active");
-    repeatTrackButton.setAttribute("aria-pressed", "false");
+    state.trackRepeatCount = 0;
+    state.trackRepeatRemaining = 0;
+    updateRepeatTrackUi();
     state.playOnceRemaining = state.tracks.length;
     state.activeDurationMs = getPlayOnceDurationMs();
   } else {
@@ -505,9 +549,9 @@ function toggleManualNext() {
   manualNextButton.setAttribute("aria-pressed", String(state.isManualNext));
   if (state.isManualNext && state.isRepeatingTrack) {
     state.isRepeatingTrack = false;
-    audioPlayer.loop = false;
-    repeatTrackButton.classList.remove("is-active");
-    repeatTrackButton.setAttribute("aria-pressed", "false");
+    state.trackRepeatCount = 0;
+    state.trackRepeatRemaining = 0;
+    updateRepeatTrackUi();
   }
 }
 
@@ -839,6 +883,26 @@ audioPlayer.addEventListener("pause", () => {
 });
 
 audioPlayer.addEventListener("ended", () => {
+  if (state.isRepeatingTrack) {
+    if (state.trackRepeatCount === Infinity || state.trackRepeatRemaining > 0) {
+      if (Number.isFinite(state.trackRepeatRemaining)) {
+        state.trackRepeatRemaining -= 1;
+      }
+      state.playIntent = true;
+      audioPlayer.currentTime = 0;
+      void audioPlayer.play().catch(() => {
+        state.playIntent = false;
+        updatePlaybackUi();
+      });
+      return;
+    }
+
+    state.isRepeatingTrack = false;
+    state.trackRepeatCount = 0;
+    state.trackRepeatRemaining = 0;
+    updateRepeatTrackUi();
+  }
+
   if (state.isManualNext) {
     selectNextTrackPausedAfterEnd();
     return;
@@ -889,7 +953,10 @@ rewindButton.addEventListener("click", () => seekBy(-state.skipSeconds));
 forwardButton.addEventListener("click", () => seekBy(state.skipSeconds));
 shuffleButton.addEventListener("click", toggleShuffle);
 loopButton.addEventListener("click", toggleLoop);
-repeatTrackButton.addEventListener("click", toggleRepeatTrack);
+repeatTrackButton.addEventListener("click", toggleRepeatTrackMenu);
+repeatTrackMenu.querySelectorAll("[data-repeat-mode]").forEach((option) => {
+  option.addEventListener("click", () => setTrackRepeatMode(option.dataset.repeatMode));
+});
 playOnceButton.addEventListener("click", togglePlayOnce);
 manualNextButton.addEventListener("click", toggleManualNext);
 slowerButton.addEventListener("click", () => changePlaybackRate(-0.05));
@@ -928,14 +995,32 @@ appShell.addEventListener("pointerdown", (event) => {
   }
 });
 
+document.addEventListener("pointerdown", (event) => {
+  if (!repeatTrackMenu.hidden && !repeatTrackControl.contains(event.target)) {
+    closeRepeatTrackMenu();
+  }
+});
+
 window.addEventListener("resize", () => {
   if (!state.analyser) drawIdleVisualizer();
 });
 
 window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !repeatTrackMenu.hidden) {
+    closeRepeatTrackMenu(true);
+  }
   if (event.code === "Space") {
+    if (event.target instanceof Element && event.target.closest("#repeatTrackButton, .repeat-track-option")) {
+      return;
+    }
     event.preventDefault();
     togglePlayback();
+  }
+  if (
+    repeatTrackMenu.contains(document.activeElement) &&
+    (event.code === "ArrowRight" || event.code === "ArrowLeft")
+  ) {
+    return;
   }
   if (event.code === "ArrowRight") nextTrack(true);
   if (event.code === "ArrowLeft") previousTrack();
@@ -948,6 +1033,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 loopButton.classList.add("is-active");
+updateRepeatTrackUi();
 updateSkipControls();
 setupMediaSessionActions();
 boot();
