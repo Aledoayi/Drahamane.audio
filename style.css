@@ -411,18 +411,30 @@ h2 {
 
 .repeat-track-badge {
   position: absolute;
-  top: -4px;
+  top: -6px;
   left: 27px;
   display: grid;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
+  width: 21px;
+  height: 21px;
+  padding: 2px;
   place-items: center;
-  border: 1px solid var(--panel-strong);
-  border-radius: 999px;
-  color: #111;
-  background: var(--accent-cool);
-  font-size: 0.62rem;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent-cool) var(--repeat-progress, 100%),
+    rgba(255, 255, 255, 0.24) 0
+  );
+  transition: background 320ms ease;
+}
+
+.repeat-track-badge-value {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--panel-strong);
+  font-size: 0.52rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -514,6 +526,14 @@ h2 {
 .repeat-track-custom button:focus-visible {
   outline: none;
   background: rgba(255, 255, 255, 0.18);
+}
+
+.repeat-track-remaining {
+  min-height: 1.2em;
+  margin: 5px 4px 1px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
 }
 
 .speed-control {

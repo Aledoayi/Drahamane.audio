@@ -54,10 +54,12 @@ const shuffleButton = document.querySelector("#shuffleButton");
 const loopButton = document.querySelector("#loopButton");
 const repeatTrackButton = document.querySelector("#repeatTrackButton");
 const repeatTrackBadge = document.querySelector("#repeatTrackBadge");
+const repeatTrackBadgeValue = document.querySelector("#repeatTrackBadgeValue");
 const repeatTrackMenu = document.querySelector("#repeatTrackMenu");
 const repeatTrackControl = repeatTrackButton.closest(".repeat-track-control");
 const repeatTrackCountInput = document.querySelector("#repeatTrackCountInput");
 const applyRepeatTrackCount = document.querySelector("#applyRepeatTrackCount");
+const repeatTrackRemainingText = document.querySelector("#repeatTrackRemainingText");
 const playOnceButton = document.querySelector("#playOnceButton");
 const manualNextButton = document.querySelector("#manualNextButton");
 const slowerButton = document.querySelector("#slowerButton");
@@ -237,6 +239,7 @@ function loadTrack(index, autoplay = false) {
   state.currentIndex = (index + state.tracks.length) % state.tracks.length;
   if (state.isRepeatingTrack && Number.isFinite(state.trackRepeatCount)) {
     state.trackRepeatRemaining = state.trackRepeatCount;
+    updateRepeatTrackUi();
   }
   const src = state.tracks[state.currentIndex];
   audioPlayer.src = src;
@@ -452,24 +455,38 @@ function toggleLoop() {
 
 function updateRepeatTrackUi() {
   const active = state.isRepeatingTrack;
+  const remaining = state.trackRepeatRemaining;
   const label = !active
     ? "Choisir le nombre de répétitions de la piste"
     : state.trackRepeatCount === Infinity
       ? "Répéter la piste indéfiniment"
-      : state.trackRepeatCount === 1
-        ? "Répéter la piste une fois de plus"
-        : `Répéter la piste ${state.trackRepeatCount} fois de plus`;
+      : remaining === 0
+        ? `Répéter la piste : dernière lecture, aucune répétition supplémentaire après celle-ci sur ${state.trackRepeatCount}`
+        : `Répéter la piste : ${remaining} répétition${remaining === 1 ? "" : "s"} restante${remaining === 1 ? "" : "s"} sur ${state.trackRepeatCount}`;
 
   repeatTrackButton.classList.toggle("is-active", active);
   repeatTrackButton.setAttribute("aria-pressed", String(active));
   repeatTrackButton.setAttribute("aria-label", label);
   repeatTrackButton.title = label;
   repeatTrackBadge.hidden = !active;
-  repeatTrackBadge.textContent = state.trackRepeatCount === Infinity
+  repeatTrackBadgeValue.textContent = state.trackRepeatCount === Infinity
     ? "∞"
-    : state.trackRepeatCount > 99
+    : remaining > 99
       ? "99+"
-      : String(state.trackRepeatCount);
+      : String(remaining);
+  const progress = state.trackRepeatCount === Infinity
+    ? 100
+    : state.trackRepeatCount > 0
+      ? Math.max(0, Math.min(100, (remaining / state.trackRepeatCount) * 100))
+      : 0;
+  repeatTrackBadge.style.setProperty("--repeat-progress", `${progress}%`);
+  repeatTrackRemainingText.textContent = !active
+    ? ""
+    : state.trackRepeatCount === Infinity
+      ? "Répétition indéfinie."
+      : remaining === 0
+        ? "Aucune répétition supplémentaire ne suivra cette écoute; c’est la dernière."
+        : `${remaining} répétition${remaining === 1 ? "" : "s"} restante${remaining === 1 ? "" : "s"} sur ${state.trackRepeatCount}.`;
 
   repeatTrackMenu.querySelectorAll("[data-repeat-mode]").forEach((option) => {
     const selected = state.trackRepeatCount === Infinity
@@ -908,6 +925,7 @@ audioPlayer.addEventListener("ended", () => {
     if (state.trackRepeatCount === Infinity || state.trackRepeatRemaining > 0) {
       if (Number.isFinite(state.trackRepeatRemaining)) {
         state.trackRepeatRemaining -= 1;
+        updateRepeatTrackUi();
       }
       state.playIntent = true;
       audioPlayer.currentTime = 0;
